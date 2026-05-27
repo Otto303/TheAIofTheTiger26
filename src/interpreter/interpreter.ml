@@ -40,6 +40,12 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
   | Lval lv -> read_lvalue state lv
   | Seq seq ->
       List.fold_left (fun (_,acc) ex -> eval_expr acc ex) (Void, state) seq
+  | While (cond, body) ->
+      let (ex, st) = eval_expr state cond in
+      if Value.cast_int cond.e_loc ex != 0 then
+          let _,st2 = eval_expr st body in
+          eval_expr st2 e
+      else (Void, st)
   | IfThenElse (cond, thenclause, elseclause) ->
       let (ex, st) = eval_expr state cond in
       if Value.cast_int cond.e_loc ex != 0 then eval_expr st thenclause else
@@ -53,7 +59,7 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
   | Relop (left, op, right) ->
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
-      (Int (relop_to_fun op lex rex), state)
+      (Int (relop_to_fun op lex rex), st2)
   | Binop (left, op, right) ->
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
