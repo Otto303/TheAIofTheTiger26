@@ -38,24 +38,34 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
   (* complete the function and keep this wildcard card until it becomes redundant *)
   | String s -> (String s, state)
   | Lval lv -> read_lvalue state lv
+  | Seq seq ->
+      List.fold_left (fun (_,acc) ex -> eval_expr acc ex) (Void, state) seq
+  | IfThenElse (cond, thenclause, elseclause) ->
+      let (ex, st) = eval_expr state cond in
+      if Value.cast_int cond.e_loc ex != 0 then eval_expr st thenclause else
+      (match elseclause with
+      | None -> (Void, st)
+      | Some els -> eval_expr st els)
   | Assign (lv, ex) ->
       let (rv, st) = eval_expr state ex in
       let st2 = write_lvalue st lv rv in
       (Void, st2)
+  | Relop (left, op, right) ->
+      let lex, st = eval_expr state left in
+      let rex, st2 = eval_expr st right in
+      (Int (relop_to_fun op lex rex), state)
   | Binop (left, op, right) ->
-          let lex, st = eval_expr state left in
-          let rex, st2 = eval_expr st right in
-          (match lex, rex with
-          | (Int li, Int ri) -> (Int ((binop_to_fun op) li ri), state)
-          | (_,_) -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
+      let lex, st = eval_expr state left in
+      let rex, st2 = eval_expr st right in
+      (match lex, rex with
+      | (Int li, Int ri) -> (Int (binop_to_fun op li ri), state)
+      | (_,_) -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
   | Let (chs, ex) ->
       let scope = State.enter_scope state in
       let st = eval_chunks scope chs in
       let ret, stp = eval_expr st ex in
       let lst = State.exit_scope stp in
       (ret, lst)
-  | Seq seq ->
-      List.fold_left (fun (_,acc) ex -> eval_expr acc ex) (Void, state) seq
   | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
 
 (* Writes a value to the location referred to by the given lvalue,
