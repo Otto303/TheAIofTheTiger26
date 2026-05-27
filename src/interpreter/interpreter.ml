@@ -35,8 +35,28 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
       in
       let func = State.find_fun name state in
       (func args, state)
-     (* complete the function and keep this wildcard card until it becomes redundant *)
-     | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
+  (* complete the function and keep this wildcard card until it becomes redundant *)
+  | String s -> (String s, state)
+  | Lval lv -> read_lvalue state lv
+  | Assign (lv, ex) ->
+      let (rv, st) = eval_expr state ex in
+      let st2 = write_lvalue st lv rv in
+      (Void, st2)
+  | Binop (left, op, right) ->
+          let lex, st = eval_expr state left in
+          let rex, st2 = eval_expr st right in
+          (match lex, rex with
+          | (Int li, Int ri) -> (Int ((binop_to_fun op) li ri), state)
+          | (_,_) -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
+  | Let (chs, ex) ->
+      let scope = State.enter_scope state in
+      let st = eval_chunks scope chs in
+      let ret, stp = eval_expr st ex in
+      let lst = State.exit_scope stp in
+      (ret, lst)
+  | Seq seq ->
+      List.fold_left (fun (_,acc) ex -> eval_expr acc ex) (Void, state) seq
+  | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
 
 (* Writes a value to the location referred to by the given lvalue,
    returning the updated state.  This may involve evaluating
@@ -74,8 +94,11 @@ and eval_chunk (state : State.t) (c : chunk) : State.t =
          into account, but the result is dicarded *)
       let _, state = eval_expr state e in
       state
-     (* complete the function and keep this wildcard card until it becomes redundant *)
-     | _ -> Format.asprintf "%a (%s)" Ast.print_chunk c __FUNCTION__ |> Utils.niy
+  (* complete the function and keep this wildcard card until it becomes redundant *)
+  | Vardec (lv, None, e) ->
+          let rv, st = eval_expr state e in
+          State.add_value lv rv st
+  | _ -> Format.asprintf "%a (%s)" Ast.print_chunk c __FUNCTION__ |> Utils.niy
 
 open Value
 
