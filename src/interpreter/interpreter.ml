@@ -39,33 +39,34 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
   | String s -> (String s, state)
   | Lval lv -> read_lvalue state lv
   | Seq seq ->
-      List.fold_left (fun (_,acc) ex -> eval_expr acc ex) (Void, state) seq
+      List.fold_left (fun (_, acc) ex -> eval_expr acc ex) (Void, state) seq
   | While (cond, body) ->
-      let (ex, st) = eval_expr state cond in
+      let ex, st = eval_expr state cond in
       if Value.cast_int cond.e_loc ex != 0 then
-          let _,st2 = eval_expr st body in
-          eval_expr st2 e
+        let _, st2 = eval_expr st body in
+        eval_expr st2 e
       else (Void, st)
-  | IfThenElse (cond, thenclause, elseclause) ->
-      let (ex, st) = eval_expr state cond in
-      if Value.cast_int cond.e_loc ex != 0 then eval_expr st thenclause else
-      (match elseclause with
-      | None -> (Void, st)
-      | Some els -> eval_expr st els)
+  | IfThenElse (cond, thenclause, elseclause) -> (
+      let ex, st = eval_expr state cond in
+      if Value.cast_int cond.e_loc ex != 0 then eval_expr st thenclause
+      else
+        match elseclause with
+        | None -> (Void, st)
+        | Some els -> eval_expr st els)
   | Assign (lv, ex) ->
-      let (rv, st) = eval_expr state ex in
+      let rv, st = eval_expr state ex in
       let st2 = write_lvalue st lv rv in
       (Void, st2)
   | Relop (left, op, right) ->
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
       (Int (relop_to_fun op lex rex), st2)
-  | Binop (left, op, right) ->
+  | Binop (left, op, right) -> (
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
-      (match lex, rex with
-      | (Int li, Int ri) -> (Int (binop_to_fun op li ri), state)
-      | (_,_) -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
+      match (lex, rex) with
+      | Int li, Int ri -> (Int (binop_to_fun op li ri), state)
+      | _, _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
   | Let (chs, ex) ->
       let scope = State.enter_scope state in
       let st = eval_chunks scope chs in
@@ -85,8 +86,8 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
 and write_lvalue (state : State.t) (lv : lvalue) (value : Value.t) : State.t =
   match lv.l_payload with
   | Var id -> State.update_value id value state
-     (* complete the function and keep this wildcard card until it becomes redundant *)
-     | _ -> Format.asprintf "%a (%s)" Ast.print_lvalue lv __FUNCTION__ |> Utils.niy
+  (* complete the function and keep this wildcard card until it becomes redundant *)
+  | _ -> Format.asprintf "%a (%s)" Ast.print_lvalue lv __FUNCTION__ |> Utils.niy
 
 (* Resolves an lvalue to the value it refers to, returning the value
    and the updated state.  This may involve evaluating subexpressions
@@ -96,9 +97,8 @@ and write_lvalue (state : State.t) (lv : lvalue) (value : Value.t) : State.t =
 and read_lvalue (state : State.t) (lv : lvalue) : Value.t * State.t =
   match lv.l_payload with
   | Var id -> (State.find_value id state, state)
-     (* complete the function and keep this wildcard card until it becomes redundant *)
-     | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
-
+  (* complete the function and keep this wildcard card until it becomes redundant *)
+  | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
 
 and eval_chunks (state : State.t) (chunks : chunk list) : State.t =
   List.fold_left eval_chunk state chunks
@@ -112,8 +112,8 @@ and eval_chunk (state : State.t) (c : chunk) : State.t =
       state
   (* complete the function and keep this wildcard card until it becomes redundant *)
   | Vardec (lv, None, e) ->
-          let rv, st = eval_expr state e in
-          State.add_value lv rv st
+      let rv, st = eval_expr state e in
+      State.add_value lv rv st
   | _ -> Format.asprintf "%a (%s)" Ast.print_chunk c __FUNCTION__ |> Utils.niy
 
 open Value
@@ -147,22 +147,22 @@ let print out = function
            __FUNCTION__ (List.length args))
 
 let concat = function
-     (* complete the function *)
-    | [ String s1; String s2 ] -> String (String.cat s1 s2)
-    | [ arg1; arg2 ] ->
-        failwith
-          (Format.asprintf "type error in %s: was expecting two string but got %a %a"
-             __FUNCTION__ Value.print arg1 Value.print arg2)
-    | args ->
-        failwith
-          (Format.asprintf
-             "arity error in %s: was expecting two argument but got %i"
-             __FUNCTION__ (List.length args))
-
+  (* complete the function *)
+  | [ String s1; String s2 ] -> String (String.cat s1 s2)
+  | [ arg1; arg2 ] ->
+      failwith
+        (Format.asprintf
+           "type error in %s: was expecting two string but got %a %a"
+           __FUNCTION__ Value.print arg1 Value.print arg2)
+  | args ->
+      failwith
+        (Format.asprintf
+           "arity error in %s: was expecting two argument but got %i"
+           __FUNCTION__ (List.length args))
 
 let range = function
-   (* complete the function *)
-   | _ -> Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+  (* complete the function *)
+  | _ -> Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
 (* Evaluates a Tiger program with an optional output formatter.
    Initializes the runtime environment with built-in functions and
