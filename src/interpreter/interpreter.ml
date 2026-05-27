@@ -142,7 +142,17 @@ let print out = function
 
 let concat = function
      (* complete the function *)
-     | _ -> Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    | [ String s1; String s2 ] -> String (String.cat s1 s2)
+    | [ arg1; arg2 ] ->
+        failwith
+          (Format.asprintf "type error in %s: was expecting two string but got %a %a"
+             __FUNCTION__ Value.print arg1 Value.print arg2)
+    | args ->
+        failwith
+          (Format.asprintf
+             "arity error in %s: was expecting two argument but got %i"
+             __FUNCTION__ (List.length args))
+
 
 let range = function
    (* complete the function *)
