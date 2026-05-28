@@ -40,6 +40,14 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
   | Lval lv -> read_lvalue state lv
   | Seq seq ->
       List.fold_left (fun (_, acc) ex -> eval_expr acc ex) (Void, state) seq
+  | ArrayInit (_, e1, e2) -> (
+      let sz, st = eval_expr state e1 in
+      let ini, st2 = eval_expr st e2 in
+      match sz with
+      | Int i -> (Value.array_make i ini, st2)
+      | _ ->
+          Format.asprintf "Type error: excpected int, got %a" Value.print sz
+          |> Utils.niy)
   | While (cond, body) ->
       let ex, st = eval_expr state cond in
       if Value.cast_int cond.e_loc ex != 0 then
@@ -114,6 +122,7 @@ and eval_chunk (state : State.t) (c : chunk) : State.t =
   | Vardec (lv, None, e) ->
       let rv, st = eval_expr state e in
       State.add_value lv rv st
+  | Typedec (_, _) -> state (* ignore type dec *)
   | _ -> Format.asprintf "%a (%s)" Ast.print_chunk c __FUNCTION__ |> Utils.niy
 
 open Value
