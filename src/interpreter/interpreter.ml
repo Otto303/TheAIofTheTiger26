@@ -65,6 +65,14 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
       let rv, st = eval_expr state ex in
       let st2 = write_lvalue st lv rv in
       (Void, st2)
+  | Boolop (left, op, right) -> (
+      let lex, st = eval_expr state left in
+      match lex with
+      | Int li -> (
+          match op with
+          | And -> if li != 0 then eval_expr st right else (lex, st)
+          | Or -> if li == 0 then eval_expr st right else (lex, st))
+      | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
   | Relop (left, op, right) ->
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
@@ -81,7 +89,6 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
       let ret, stp = eval_expr st ex in
       let lst = State.exit_scope stp in
       (ret, lst)
-  | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
 
 (* Writes a value to the location referred to by the given lvalue,
    returning the updated state.  This may involve evaluating
