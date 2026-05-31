@@ -200,12 +200,21 @@ let concat = function
   | args ->
       failwith
         (Format.asprintf
-           "arity error in %s: was expecting two argument but got %i"
+           "arity error in %s: was expecting two arguments but got %i"
            __FUNCTION__ (List.length args))
 
 let range = function
   (* complete the function *)
-  | _ -> Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+  | [ Int li; Int hi ] -> Int (Random.int_in_range ~min:li ~max:hi)
+  | [ arg1; arg2 ] ->
+      failwith
+        (Format.asprintf "type error in %s: was expecting two int but got %a %a"
+           __FUNCTION__ Value.print arg1 Value.print arg2)
+  | args ->
+      failwith
+        (Format.asprintf
+           "arity error in %s: was expecting two arguments but got %i"
+           __FUNCTION__ (List.length args))
 
 (* Evaluates a Tiger program with an optional output formatter.
    Initializes the runtime environment with built-in functions and
