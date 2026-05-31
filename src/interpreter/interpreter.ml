@@ -73,7 +73,7 @@ let rec eval_expr (state : State.t) (e : expr) : Value.t * State.t =
       let lex, st = eval_expr state left in
       let rex, st2 = eval_expr st right in
       match (lex, rex) with
-      | Int li, Int ri -> (Int (binop_to_fun op li ri), state)
+      | Int li, Int ri -> (Int (binop_to_fun op li ri), st2)
       | _, _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy)
   | Let (chs, ex) ->
       let scope = State.enter_scope state in
@@ -95,7 +95,21 @@ and write_lvalue (state : State.t) (lv : lvalue) (value : Value.t) : State.t =
   match lv.l_payload with
   | Var id -> State.update_value id value state
   (* complete the function and keep this wildcard card until it becomes redundant *)
-  | _ -> Format.asprintf "%a (%s)" Ast.print_lvalue lv __FUNCTION__ |> Utils.niy
+  | Array (arrlv, exp) -> (
+      let idxexp, st = eval_expr state exp in
+      match idxexp with
+      | Int index -> (
+          let arrexp, st2 = read_lvalue st arrlv in
+          match arrexp with
+          | Array arr ->
+              write_lvalue st2 arrlv (Value.array_set arr index value)
+          | _ ->
+              Format.asprintf "Type error: excpected array, got %a" Value.print
+                idxexp
+              |> Utils.niy)
+      | _ ->
+          Format.asprintf "Type error: excpected int, got %a" Value.print idxexp
+          |> Utils.niy)
 
 (* Resolves an lvalue to the value it refers to, returning the value
    and the updated state.  This may involve evaluating subexpressions
@@ -106,7 +120,20 @@ and read_lvalue (state : State.t) (lv : lvalue) : Value.t * State.t =
   match lv.l_payload with
   | Var id -> (State.find_value id state, state)
   (* complete the function and keep this wildcard card until it becomes redundant *)
-  | _ -> Format.asprintf "(%s)" __FUNCTION__ |> Utils.niy
+  | Array (arrlv, exp) -> (
+      let idxexp, st = eval_expr state exp in
+      match idxexp with
+      | Int index -> (
+          let arrexp, st2 = read_lvalue st arrlv in
+          match arrexp with
+          | Array arr -> (Value.array_get arr index, st2)
+          | _ ->
+              Format.asprintf "Type error: excpected array, got %a" Value.print
+                idxexp
+              |> Utils.niy)
+      | _ ->
+          Format.asprintf "Type error: excpected int, got %a" Value.print idxexp
+          |> Utils.niy)
 
 and eval_chunks (state : State.t) (chunks : chunk list) : State.t =
   List.fold_left eval_chunk state chunks
