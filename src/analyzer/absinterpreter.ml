@@ -105,7 +105,17 @@ module Make (D : D) = struct
      (Value.Int) *)
   and analyze_binop (loc : location) (state : State.t) (left : Ast.expr)
       (right : Ast.expr) (op : Ast.binop) =
-     Format.asprintf "%s not implemented" __FUNCTION__ |> Utils.niy
+          let annot_left = analyze_expr state left in
+          let annot_right = analyze_expr annot_left.e_state right in
+          let li = Value.cast_int annot_left.e_loc annot_left.e_value in
+          let ri = Value.cast_int annot_right.e_loc annot_right.e_value in
+          let res = match op with
+            | Add -> Absint.add li ri
+            | Sub -> Absint.sub li ri
+            | Mul -> Absint.mul li ri
+            | Div -> Absint.div li ri
+          in Annotast.build_expr loc (Annotast.ABinop (annot_left, op, annot_right)) annot_right.e_state (Value.Int res)
+
 
   (* Step 2: Analyze a comparison *)
   and analyze_relop (loc : location) (state : State.t) (left : Ast.expr)
