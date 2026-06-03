@@ -120,7 +120,11 @@ module Make (D : D) = struct
   (* Step 2: Analyze a comparison *)
   and analyze_relop (loc : location) (state : State.t) (left : Ast.expr)
       (right : Ast.expr) (op : Ast.relop) =
-     Format.asprintf "%s not implemented" __FUNCTION__ |> Utils.niy
+          let annot_left = analyze_expr state left in
+          let annot_right = analyze_expr annot_left.e_state right in
+          let res = relop_to_fun op annot_left.e_value annot_right.e_value
+          in Annotast.build_expr loc (Annotast.ARelop (annot_left, op, annot_right)) annot_right.e_state (Value.Int res)
+      
 
   (* Step 2: Analyzes a sequence of expressions in order, threading state
      through each one.  Returns the list of annotated expressions, the
