@@ -161,7 +161,11 @@ module Make (D : D) = struct
 
   (* Step 2: Analyze a let-binding *)
   and analyze_let loc state chunks body =
-     Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+      let state = State.enter_scope state in
+      let annot_chunks, st = analyze_chunks state chunks in
+      let annnot_body = analyze_expr st body in
+      let state = State.exit_scope annnot_body.e_state in
+      Annotast.build_expr loc (Annotast.ALet (annot_chunks, annnot_body)) state Void
 
   (* Step 2: Analyze a boolean operation
      - Hint : use State.join *)
