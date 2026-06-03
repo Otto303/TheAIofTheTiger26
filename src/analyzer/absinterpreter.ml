@@ -165,7 +165,18 @@ module Make (D : D) = struct
      to right *)
   and analyze_funcall (state : State.t) loc (name : string) (args : expr list) :
       (State.t, Value.t) Annotast.expr =
-    Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+    let state, annot = 
+    List.fold_left
+      (
+        fun (s, acc) a ->
+          let ann = analyze_expr s a in
+          (ann.e_state, acc @ [ ann ])
+      )
+        (state, []) args
+    in
+    let func = State.find_fun name state in
+    let args = List.map (fun (x : (State.t, Value.t) Annotast.expr) -> x.e_value) annot in
+    Annotast.build_expr loc (Annotast.AFuncall (name, annot)) state (func args)
 
   (* Step 2: Analyze a let-binding *)
   and analyze_let loc state chunks body =
