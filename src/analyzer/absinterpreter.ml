@@ -143,7 +143,9 @@ module Make (D : D) = struct
      Hint: use write_value *)
   and analyze_assign loc (state : State.t) (left : Ast.lvalue)
       (right : Ast.expr) : (State.t, Value.t) Annotast.expr =
-     Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+      let annot = analyze_expr state right in
+      let assign = write_lvalue annot.e_state left annot.e_value in
+      Annotast.build_expr loc (Annotast.AAssign (assign, annot)) assign.l_state Void
 
   (* Step 2: Analyze an array initialization by evaluating the size and
      content expressions. Returns the annotated expression and result. *)
