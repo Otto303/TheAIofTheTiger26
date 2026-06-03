@@ -116,7 +116,6 @@ module Make (D : D) = struct
             | Div -> Absint.div li ri
           in Annotast.build_expr loc (Annotast.ABinop (annot_left, op, annot_right)) annot_right.e_state (Value.Int res)
 
-
   (* Step 2: Analyze a comparison *)
   and analyze_relop (loc : location) (state : State.t) (left : Ast.expr)
       (right : Ast.expr) (op : Ast.relop) =
@@ -124,14 +123,21 @@ module Make (D : D) = struct
           let annot_right = analyze_expr annot_left.e_state right in
           let res = relop_to_fun op annot_left.e_value annot_right.e_value
           in Annotast.build_expr loc (Annotast.ARelop (annot_left, op, annot_right)) annot_right.e_state (Value.Int res)
-      
 
   (* Step 2: Analyzes a sequence of expressions in order, threading state
      through each one.  Returns the list of annotated expressions, the
      final state, and the value of the last expression. *)
   and analyze_seq (state : State.t) (exprs : Ast.expr list) :
       (State.t, Value.t) Annotast.expr list * State.t * Value.t =
-     Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+          match exprs with
+          | [] -> ([], state, Void)
+          | e::[] ->
+              let annot = analyze_expr state e in
+              ([annot], annot.e_state, annot.e_value)
+          | e::l ->
+              let annot = analyze_expr state e in
+              let lst, st, v = analyze_seq annot.e_state l in
+              (annot::lst, st, v)
 
   (* Step 2: Analyze an assignment.
      Hint: use write_value *)
