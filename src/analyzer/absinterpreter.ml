@@ -159,7 +159,10 @@ module Make (D : D) = struct
      content expressions. Returns the annotated expression and result. *)
   and analyze_array_init loc (state : State.t) (id : string) (size : expr)
       (content : expr) : (State.t, Value.t) Annotast.expr =
-    Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+      let sizeAnnot = analyze_expr state size in
+      let contentAnnot = analyze_expr sizeAnnot.e_state content in
+      let arr = Value.array_make (Value.cast_int sizeAnnot.e_loc sizeAnnot.e_value) contentAnnot.e_value in
+      Annotast.build_expr loc (Annotast.AArrayInit (id, sizeAnnot, contentAnnot)) contentAnnot.e_state arr
 
   (* Step 2: Analyze a function call. Arguments are evaluated from left
      to right *)
