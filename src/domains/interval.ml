@@ -105,7 +105,19 @@ let eq i1 i2 =
     | _, _ -> false)
 
 let ne i1 i2 = if eq i1 i2 == true_ then false_ else true_
-let gt _ _ = maybe_
+
+let gt i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      if x1 > y2 then true_ else if y1 >= x2 then false_ else maybe_
+  | Range (x1, _), Minf y2 -> if y2 < x1 then true_ else maybe_
+  | Minf x2, Range (y1, _) -> if y1 > x2 then false_ else maybe_
+  | Range (_, x2), Inf y1 -> if y1 >= x2 then false_ else maybe_
+  | Inf x2, Range (_, y2) -> if y2 >= x2 then maybe_ else false_
+  | Minf x2, Inf y1 -> if y1 >= x2 then false_ else maybe_
+  | Inf x1, Minf y2 -> if y2 < x1 then true_ else maybe_
+  | _ -> maybe_
+
 let ge _ _ = maybe_
 let lt _ _ = maybe_
 let le _ _ = maybe_
