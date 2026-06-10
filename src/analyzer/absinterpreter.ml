@@ -219,7 +219,10 @@ module Make (D : D) = struct
         build_lval lv.l_loc (AVar id) state value
     | Array (lv', idx) ->
         (* replace with your own code *)
-        Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+        let arr_annot = read_lvalue state lv' in
+        let idx_annot = analyze_expr arr_annot.l_state idx in
+        let subscript = Value.array_get (Value.cast_array arr_annot.l_loc arr_annot.l_value) (Value.cast_int idx_annot.e_loc idx_annot.e_value) in
+        Annotast.build_lval lv.l_loc (AArray (arr_annot, idx_annot)) idx_annot.e_state subscript
 
   (* Evaluates an lvalue to perform a write operation.
      - If the lvalue is a variable, updates its value in the current state.
