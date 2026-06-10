@@ -189,7 +189,7 @@ module Make (D : D) = struct
     let state = State.exit_scope annnot_body.e_state in
     Annotast.build_expr loc
       (Annotast.ALet (annot_chunks, annnot_body))
-      state Void
+      state annnot_body.e_value
 
   (* Step 2: Analyze a boolean operation
      - Hint : use State.join *)
@@ -238,7 +238,10 @@ module Make (D : D) = struct
         build_lval lv.l_loc (AVar id) state Value.Void
     | Array (lv', idx) ->
         (* replace with your own code *)
-        Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+        let arr_annot = read_lvalue state lv' in
+        let idx_annot = analyze_expr arr_annot.l_state idx in
+        let subscript = Value.array_set (Value.cast_array arr_annot.l_loc arr_annot.l_value) (Value.cast_int idx_annot.e_loc idx_annot.e_value) v in
+        build_lval lv.l_loc (AArray (arr_annot, idx_annot)) idx_annot.e_state subscript
 
   (* Step 3: Analyze an if-expression by evaluating the condition and both
      branches. Joins the resulting states and values.
