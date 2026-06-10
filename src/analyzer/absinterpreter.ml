@@ -195,7 +195,17 @@ module Make (D : D) = struct
      - Hint : use State.join *)
   and analyze_boolop (loc : location) (state : State.t) (left : Ast.expr)
       (right : Ast.expr) (op : Ast.boolop) =
-    Format.asprintf "%s not implemented" __FUNCTION__ |> Utils.niy
+    let l_annot = analyze_expr state left in
+    let r_annot = analyze_expr l_annot.e_state right in
+    let res = boolop_to_fun op (Value.cast_int loc l_annot.e_value) (Value.cast_int loc r_annot.e_value) in 
+    match op, (Value.cast_bool loc l_annot.e_value) with
+    | And, True | Or, False -> Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) r_annot.e_state (Value.Int res)
+    | And, False | Or, True -> Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) r_annot.e_state (Value.Int res)
+    | _, Unknown ->
+      let j_val = Value.join l_annot.e_value r_annot.e_value in
+      let j_state = State.join l_annot.e_state r_annot.e_state in
+      Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) j_state j_val
+
 
   (* Evaluates an lvalue to read its value.
      - If the lvalue is a variable, retrieves its value from the current state.
