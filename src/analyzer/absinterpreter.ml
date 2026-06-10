@@ -238,7 +238,17 @@ module Make (D : D) = struct
   and analyze_if (state : State.t) (loc : location) (cond : expr) (tbr : expr)
       (fbr : expr option) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
-    Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+    let annot = analyze_expr state cond in
+    let t_annot = analyze_expr annot.e_state tbr in
+    let f_annot = Option.map (analyze_expr annot.e_state) fbr in
+    match (Value.cast_bool loc annot.e_value), f_annot with
+    | True, _ | Unknown, None -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) t_annot.e_state t_annot.e_value
+    | False, Some some_f -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) some_f.e_state some_f.e_value
+    | False, None -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) annot.e_state Value.Void
+    | Unknown, Some some_f ->
+            let j_val = Value.join t_annot.e_value some_f.e_value in
+            let j_state = State.join t_annot.e_state some_f.e_state in
+            Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) j_state j_val
 
   (* [accumulate cond body initial] simulates one additional iteration of a while-loop:
   - It analyzes the loop condition [cond] under the current abstract state [initial].
