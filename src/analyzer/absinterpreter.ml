@@ -291,7 +291,17 @@ module Make (D : D) = struct
   and unroll_while (state : State.t) (loc : location) (cond : expr)
       (body : expr) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
-    Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+    let rec recurse (state : State.t) (iter : int) : (State.t, Value.t) Annotast.expr =
+      if iter > Utils.max_iter then
+        raise (Max_unroll state)
+      else
+        let cond_annot = analyze_expr state cond in
+        let body_annot = analyze_expr cond_annot.e_state body in
+        match Value.cast_bool loc cond_annot.e_value with
+        | False -> Annotast.build_expr loc (Annotast.AWhile (cond_annot, body_annot)) cond_annot.e_state Void
+        | True -> recurse body_annot.e_state (iter + 1)
+        | Unknown -> recurse (State.join cond_annot.e_state (accumulate cond body state)) (iter + 1)
+    in recurse state 0
 
   (* Step 6: Analyze of a while-loop by computing a fixed point over the loop body.
      Repeatedly analyzes the condition and body under the filtered true state,
