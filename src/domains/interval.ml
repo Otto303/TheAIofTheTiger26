@@ -19,7 +19,13 @@ let print fmt itv =
 
 (* join *)
 (* Step 4 *)
-let join _ _ = Top
+let join i1 i2 =
+  match (i1, i2) with
+  | Range (l1, l2), Range (r1, r2) -> Range (min l1 r1, max l2 r2)
+  | Range (_, n), Minf high | Minf high, Range (_, n) -> Minf (max n high)
+  | Range (n, _), Inf low | Inf low, Range (_, n) -> Inf (min n low)
+  | _ -> Top
+
 let widen _ _ = Top
 
 let subset a b =
@@ -41,9 +47,30 @@ let neg (i : t) : t =
   | Range (l, u) -> Range (-u, -l)
 
 (* Step 4 *)
-let add _i1 _i2 = Top
-let sub _i1 _i2 = Top
-let mul _i1 _i2 = Top
+let add i1 i2 =
+  match (i1, i2) with
+  | Range (r1, r2), Range (l1, l2) -> Range (l1 + r1, l2 + r2)
+  | Range (_, n), Minf high | Minf high, Range (_, n) -> Minf (n + high)
+  | Range (n, _), Inf low | Inf low, Range (_, n) -> Inf (n + low)
+  | _ -> Top
+
+let sub i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) -> Range (x1 - y2, x2 - y1)
+  | Range (x1, _), Minf y2 -> Inf (x1 - y2)
+  | Minf x2, Range (y1, _) -> Minf (x2 - y1)
+  | Range (_, x2), Inf y1 -> Minf (x2 - y1)
+  | Inf x1, Range (_, y2) -> Inf (x1 - y2)
+  | _ -> Top
+
+let mul i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      Range
+        ( List.fold_left min (x1 * y1) [ x1 * y2; x2 * y1; x2 * y2 ],
+          List.fold_left max (x1 * y1) [ x1 * y2; x2 * y1; x2 * y2 ] )
+  | _, _ -> Top
+
 let div _i1 _i2 = Top
 
 (* truth handling *)
@@ -56,6 +83,8 @@ let truth = function
   | Range (1, 1) -> Domain.True
   | _ -> Domain.Unknown
 
+let bool_to_Bool (b : bool) = if b then true_ else false_
+
 (* boolean logic *)
 (* Tiger Boolean operators normalize their result to 0 or 1 *)
 let logical_and a b =
@@ -66,8 +95,16 @@ let logical_or a b =
 
 (* comparisons *)
 (* Step 4 *)
-let eq _ _ = maybe_
-let ne _ _ = maybe_
+let eq i1 i2 =
+  bool_to_Bool
+    (match (i1, i2) with
+    | Range (x1, x2), Range (y1, y2) -> x1 == y1 && x2 == y2
+    | Inf x1, Inf y1 -> x1 == y1
+    | Minf x2, Minf y2 -> x2 == y2
+    | Top, Top -> true
+    | _, _ -> false)
+
+let ne i1 i2 = if eq i1 i2 == true_ then false_ else true_
 let gt _ _ = maybe_
 let ge _ _ = maybe_
 let lt _ _ = maybe_
