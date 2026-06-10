@@ -7,6 +7,9 @@ default: build
 build:
 	dune build
 
+format:
+	find . -regextype sed -regex './src/.*.ml' -prune -exec ocamlformat --enable-outside-detected-project -i {} \;
+
 test:
 	@dune exec ./src/concrete/tests_concrete.exe
 #	uncomment when working on step 2

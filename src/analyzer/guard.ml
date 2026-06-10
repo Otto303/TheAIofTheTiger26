@@ -39,7 +39,6 @@ module Make (D : Domain.D) = struct
     | Gt -> Le
     | Ge -> Lt
 
-
   (** utility function to turn a comparison operator to its filtering
       counterpart in the abstract domain *)
   let filter_fun cmp_op =

@@ -159,26 +159,32 @@ module Make (D : D) = struct
      content expressions. Returns the annotated expression and result. *)
   and analyze_array_init loc (state : State.t) (id : string) (size : expr)
       (content : expr) : (State.t, Value.t) Annotast.expr =
-      let sizeAnnot = analyze_expr state size in
-      let contentAnnot = analyze_expr sizeAnnot.e_state content in
-      let arr = Value.array_make (Value.cast_int sizeAnnot.e_loc sizeAnnot.e_value) contentAnnot.e_value in
-      Annotast.build_expr loc (Annotast.AArrayInit (id, sizeAnnot, contentAnnot)) contentAnnot.e_state arr
+    let sizeAnnot = analyze_expr state size in
+    let contentAnnot = analyze_expr sizeAnnot.e_state content in
+    let arr =
+      Value.array_make
+        (Value.cast_int sizeAnnot.e_loc sizeAnnot.e_value)
+        contentAnnot.e_value
+    in
+    Annotast.build_expr loc
+      (Annotast.AArrayInit (id, sizeAnnot, contentAnnot))
+      contentAnnot.e_state arr
 
   (* Step 2: Analyze a function call. Arguments are evaluated from left
      to right *)
   and analyze_funcall (state : State.t) loc (name : string) (args : expr list) :
       (State.t, Value.t) Annotast.expr =
-    let state, annot = 
-    List.fold_left
-      (
-        fun (s, acc) a ->
+    let state, annot =
+      List.fold_left
+        (fun (s, acc) a ->
           let ann = analyze_expr s a in
-          (ann.e_state, acc @ [ ann ])
-      )
+          (ann.e_state, acc @ [ ann ]))
         (state, []) args
     in
     let func = State.find_fun name state in
-    let args = List.map (fun (x : (State.t, Value.t) Annotast.expr) -> x.e_value) annot in
+    let args =
+      List.map (fun (x : (State.t, Value.t) Annotast.expr) -> x.e_value) annot
+    in
     Annotast.build_expr loc (Annotast.AFuncall (name, annot)) state (func args)
 
   (* Step 2: Analyze a let-binding *)
@@ -197,15 +203,26 @@ module Make (D : D) = struct
       (right : Ast.expr) (op : Ast.boolop) =
     let l_annot = analyze_expr state left in
     let r_annot = analyze_expr l_annot.e_state right in
-    let res = boolop_to_fun op (Value.cast_int loc l_annot.e_value) (Value.cast_int loc r_annot.e_value) in 
-    match op, (Value.cast_bool loc l_annot.e_value) with
-    | And, True | Or, False -> Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) r_annot.e_state (Value.Int res)
-    | And, False | Or, True -> Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) r_annot.e_state (Value.Int res)
+    let res =
+      boolop_to_fun op
+        (Value.cast_int loc l_annot.e_value)
+        (Value.cast_int loc r_annot.e_value)
+    in
+    match (op, Value.cast_bool loc l_annot.e_value) with
+    | And, True | Or, False ->
+        Annotast.build_expr loc
+          (Annotast.ABoolop (l_annot, op, r_annot))
+          r_annot.e_state (Value.Int res)
+    | And, False | Or, True ->
+        Annotast.build_expr loc
+          (Annotast.ABoolop (l_annot, op, r_annot))
+          r_annot.e_state (Value.Int res)
     | _, Unknown ->
-      let j_val = Value.join l_annot.e_value r_annot.e_value in
-      let j_state = State.join l_annot.e_state r_annot.e_state in
-      Annotast.build_expr loc (Annotast.ABoolop (l_annot, op, r_annot)) j_state j_val
-
+        let j_val = Value.join l_annot.e_value r_annot.e_value in
+        let j_state = State.join l_annot.e_state r_annot.e_state in
+        Annotast.build_expr loc
+          (Annotast.ABoolop (l_annot, op, r_annot))
+          j_state j_val
 
   (* Evaluates an lvalue to read its value.
      - If the lvalue is a variable, retrieves its value from the current state.
@@ -221,8 +238,14 @@ module Make (D : D) = struct
         (* replace with your own code *)
         let arr_annot = read_lvalue state lv' in
         let idx_annot = analyze_expr arr_annot.l_state idx in
-        let subscript = Value.array_get (Value.cast_array arr_annot.l_loc arr_annot.l_value) (Value.cast_int idx_annot.e_loc idx_annot.e_value) in
-        build_lval lv.l_loc (AArray (arr_annot, idx_annot)) idx_annot.e_state subscript
+        let subscript =
+          Value.array_get
+            (Value.cast_array arr_annot.l_loc arr_annot.l_value)
+            (Value.cast_int idx_annot.e_loc idx_annot.e_value)
+        in
+        build_lval lv.l_loc
+          (AArray (arr_annot, idx_annot))
+          idx_annot.e_state subscript
 
   (* Evaluates an lvalue to perform a write operation.
      - If the lvalue is a variable, updates its value in the current state.
@@ -240,8 +263,15 @@ module Make (D : D) = struct
         (* replace with your own code *)
         let arr_annot = read_lvalue state lv' in
         let idx_annot = analyze_expr arr_annot.l_state idx in
-        let subscript = Value.array_set (Value.cast_array arr_annot.l_loc arr_annot.l_value) (Value.cast_int idx_annot.e_loc idx_annot.e_value) v in
-        build_lval lv.l_loc (AArray (arr_annot, idx_annot)) idx_annot.e_state subscript
+        let subscript =
+          Value.array_set
+            (Value.cast_array arr_annot.l_loc arr_annot.l_value)
+            (Value.cast_int idx_annot.e_loc idx_annot.e_value)
+            v
+        in
+        build_lval lv.l_loc
+          (AArray (arr_annot, idx_annot))
+          idx_annot.e_state subscript
 
   (* Step 3: Analyze an if-expression by evaluating the condition and both
      branches. Joins the resulting states and values.
@@ -257,14 +287,25 @@ module Make (D : D) = struct
     let annot = analyze_expr state cond in
     let t_annot = analyze_expr annot.e_state tbr in
     let f_annot = Option.map (analyze_expr annot.e_state) fbr in
-    match (Value.cast_bool loc annot.e_value), f_annot with
-    | True, _ | Unknown, None -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) t_annot.e_state t_annot.e_value
-    | False, Some some_f -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) some_f.e_state some_f.e_value
-    | False, None -> Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) annot.e_state Value.Void
+    match (Value.cast_bool loc annot.e_value, f_annot) with
+    | True, _ | Unknown, None ->
+        Annotast.build_expr loc
+          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          t_annot.e_state t_annot.e_value
+    | False, Some some_f ->
+        Annotast.build_expr loc
+          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          some_f.e_state some_f.e_value
+    | False, None ->
+        Annotast.build_expr loc
+          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          annot.e_state Value.Void
     | Unknown, Some some_f ->
-            let j_val = Value.join t_annot.e_value some_f.e_value in
-            let j_state = State.join t_annot.e_state some_f.e_state in
-            Annotast.build_expr loc (Annotast.AIfThenElse (annot, t_annot, f_annot)) j_state j_val
+        let j_val = Value.join t_annot.e_value some_f.e_value in
+        let j_state = State.join t_annot.e_state some_f.e_state in
+        Annotast.build_expr loc
+          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          j_state j_val
 
   (* [accumulate cond body initial] simulates one additional iteration of a while-loop:
   - It analyzes the loop condition [cond] under the current abstract state [initial].
@@ -291,17 +332,24 @@ module Make (D : D) = struct
   and unroll_while (state : State.t) (loc : location) (cond : expr)
       (body : expr) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
-    let rec recurse (state : State.t) (iter : int) : (State.t, Value.t) Annotast.expr =
-      if iter > Utils.max_iter then
-        raise (Max_unroll state)
+    let rec recurse (state : State.t) (iter : int) :
+        (State.t, Value.t) Annotast.expr =
+      if iter > Utils.max_iter then raise (Max_unroll state)
       else
         let cond_annot = analyze_expr state cond in
         let body_annot = analyze_expr cond_annot.e_state body in
         match Value.cast_bool loc cond_annot.e_value with
-        | False -> Annotast.build_expr loc (Annotast.AWhile (cond_annot, body_annot)) cond_annot.e_state Void
+        | False ->
+            Annotast.build_expr loc
+              (Annotast.AWhile (cond_annot, body_annot))
+              cond_annot.e_state Void
         | True -> recurse body_annot.e_state (iter + 1)
-        | Unknown -> recurse (State.join cond_annot.e_state (accumulate cond body state)) (iter + 1)
-    in recurse state 0
+        | Unknown ->
+            recurse
+              (State.join cond_annot.e_state (accumulate cond body state))
+              (iter + 1)
+    in
+    recurse state 0
 
   (* Step 6: Analyze of a while-loop by computing a fixed point over the loop body.
      Repeatedly analyzes the condition and body under the filtered true state,

@@ -78,13 +78,12 @@ let print_program_and_state state_print fmt cl =
     String.split_on_char '\n' s
     |> List.map (String.split_on_char '\t')
     |> List.map (function
-         | [] -> []
-         | [ h ] -> [ h ]
-         | h :: h' :: _ as l ->
-             (* T®1cKs *)
-             let l' = String.length h' in
-             if h'.[l' - 1] = ';' then [ h ^ ";"; String.sub h' 0 (l' - 1) ]
-             else l)
+      | [] -> []
+      | [ h ] -> [ h ]
+      | h :: h' :: _ as l ->
+          (* T®1cKs *)
+          let l' = String.length h' in
+          if h'.[l' - 1] = ';' then [ h ^ ";"; String.sub h' 0 (l' - 1) ] else l)
   in
   let needed_len =
     List.fold_left

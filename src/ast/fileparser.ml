@@ -4,7 +4,7 @@ open Lexing
 let parse (filename : string) =
   let content = Disamb.process_file filename in
   Utils.file := filename;
- let lex = from_string content in
+  let lex = from_string content in
   let fileparser = Parser.program Lexer.token in
   try
     lex.lex_curr_p <- { lex.lex_curr_p with pos_fname = filename };

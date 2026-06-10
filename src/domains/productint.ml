@@ -9,30 +9,30 @@ module Make (Product : Domain.IntReduction) = struct
 
   (* set-theoretic operations *)
   let join (a1, b1) (a2, b2) : t =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   let widen (a1, b1) (a2, b2) : t =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   let subset (a1, b1) (a2, b2) : bool =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   (* conversion to truth value *)
   let truth ((a, b) : t) : Domain.truth =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   (* booolean operation *)
   let logical_and (a1, b1) (a2, b2) : t =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   let logical_or (a1, b1) (a2, b2) : t =
-     (* complete the function *)
-      Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (* complete the function *)
+    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
 
   (* arith *)
   let add (a1, b1) (a2, b2) : t = (I1.add a1 a2, I2.add b1 b2)

@@ -40,8 +40,6 @@ let neg (i : t) : t =
   | Minf x -> Inf (-x)
   | Range (l, u) -> Range (-u, -l)
 
-
-
 (* Step 4 *)
 let add _i1 _i2 = Top
 let sub _i1 _i2 = Top
@@ -106,8 +104,8 @@ let filter_eq i1 i2 =
       Range (l, h) |> validate
   | _ -> i1
 
-   let filter_ne i1 i2 = i1
-   let filter_gt i1 i2 = i1
-   let filter_ge i1 i2 = i1
-   let filter_lt i1 i2 = i1
-   let filter_le i1 i2 = i1
+let filter_ne i1 i2 = i1
+let filter_gt i1 i2 = i1
+let filter_ge i1 i2 = i1
+let filter_lt i1 i2 = i1
+let filter_le i1 i2 = i1
