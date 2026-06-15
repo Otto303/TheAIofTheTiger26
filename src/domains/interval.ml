@@ -109,18 +109,50 @@ let ne i1 i2 = if eq i1 i2 == true_ then false_ else true_
 let gt i1 i2 =
   match (i1, i2) with
   | Range (x1, x2), Range (y1, y2) ->
-      if x1 > y2 then true_ else if y1 >= x2 then false_ else maybe_
-  | Range (x1, _), Minf y2 -> if y2 < x1 then true_ else maybe_
-  | Minf x2, Range (y1, _) -> if y1 > x2 then false_ else maybe_
-  | Range (_, x2), Inf y1 -> if y1 >= x2 then false_ else maybe_
-  | Inf x2, Range (_, y2) -> if y2 >= x2 then maybe_ else false_
-  | Minf x2, Inf y1 -> if y1 >= x2 then false_ else maybe_
-  | Inf x1, Minf y2 -> if y2 < x1 then true_ else maybe_
+      if x1 > y2 then true_ else if x2 <= y1 then false_ else maybe_
+  | Range (x1, _), Minf y2 -> if x1 > y2 then true_ else maybe_
+  | Minf x2, Range (y1, _) -> if x2 < y1 then false_ else maybe_
+  | Range (_, x2), Inf y1 -> if x2 <= y1 then false_ else maybe_
+  | Inf x2, Range (_, y2) -> if x2 <= y2 then maybe_ else false_
+  | Minf x2, Inf y1 -> if x2 <= y1 then false_ else maybe_
+  | Inf x1, Minf y2 -> if x1 > y2 then true_ else maybe_
   | _ -> maybe_
 
-let ge _ _ = maybe_
-let lt _ _ = maybe_
-let le _ _ = maybe_
+let ge i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      if x1 >= y2 then true_ else if x2 < y1 then false_ else maybe_
+  | Range (x1, _), Minf y2 -> if x1 >= y2 then true_ else maybe_
+  | Minf x2, Range (y1, _) -> if x2 <= y1 then false_ else maybe_
+  | Range (_, x2), Inf y1 -> if x2 < y1 then false_ else maybe_
+  | Inf x2, Range (_, y2) -> if x2 < y2 then maybe_ else false_
+  | Minf x2, Inf y1 -> if x2 < y1 then false_ else maybe_
+  | Inf x1, Minf y2 -> if x1 >= y2 then true_ else maybe_
+  | _ -> maybe_
+
+let lt i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      if x1 >= y2 then false_ else if x2 < y1 then true_ else maybe_
+  | Range (x1, _), Minf y2 -> if x1 >= y2 then false_ else maybe_
+  | Minf x2, Range (y1, _) -> if x2 <= y1 then true_ else maybe_
+  | Range (_, x2), Inf y1 -> if x2 < y1 then true_ else maybe_
+  | Inf x2, Range (_, y2) -> if x2 < y2 then maybe_ else true_
+  | Minf x2, Inf y1 -> if x2 < y1 then true_ else maybe_
+  | Inf x1, Minf y2 -> if x1 >= y2 then false_ else maybe_
+  | _ -> maybe_
+
+let le i1 i2 =
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      if x1 > y2 then false_ else if x2 <= y1 then true_ else maybe_
+  | Range (x1, _), Minf y2 -> if x1 > y2 then false_ else maybe_
+  | Minf x2, Range (y1, _) -> if x2 < y1 then true_ else maybe_
+  | Range (_, x2), Inf y1 -> if x2 <= y1 then true_ else maybe_
+  | Inf x2, Range (_, y2) -> if x2 <= y2 then maybe_ else true_
+  | Minf x2, Inf y1 -> if x2 <= y1 then true_ else maybe_
+  | Inf x1, Minf y2 -> if x1 > y2 then false_ else maybe_
+  | _ -> maybe_
 
 (* constructors *)
 let of_int x = Range (x, x)
@@ -153,8 +185,23 @@ let filter_eq i1 i2 =
       Range (l, h) |> validate
   | _ -> i1
 
-let filter_ne i1 i2 = i1
-let filter_gt i1 i2 = i1
-let filter_ge i1 i2 = i1
-let filter_lt i1 i2 = i1
-let filter_le i1 i2 = i1
+let filter_ne i1 i2 =
+  match (i1, i2) with
+  | Range _, Range _ -> Top
+  | _ -> i1
+
+let filter_gt i1 i2 =
+  match (i1, i2) with
+  | _ -> i1
+
+let filter_ge i1 i2 =
+  match (i1, i2) with
+  | _ -> i1
+
+let filter_lt i1 i2 =
+  match (i1, i2) with
+  | _ -> i1
+
+let filter_le i1 i2 =
+  match (i1, i2) with
+  | _ -> i1
