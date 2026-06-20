@@ -198,7 +198,27 @@ let filter_eq i1 i2 =
   | Top, itv | itv, Top -> itv |> validate
   | Minf h, Inf l | Inf l, Minf h -> Range (l, h) |> validate
 
-let filter_ne i1 i2 = match (i1, i2) with Range _, Range _ -> Top | _ -> i1
+let filter_ne i1 i2 =
+  match (i1, i2) with
+  | Top, Top -> raise Domain.Bot_found
+  | Top, Inf l | Inf l, Top -> Minf l |> validate
+  | Top, Minf h | Minf h, Top -> Inf h |> validate
+  | Top, Range (l, h) | Range (l, h), Top -> join (Minf l) (Inf h) |> validate
+  | Inf l1, Inf l2 -> Inf (max l1 l2) |> validate
+  | Minf h1, Minf h2 -> Minf (min h1 h2) |> validate
+  | Minf h, Inf l | Inf l, Minf h ->
+      if h < l then join i1 i2 |> validate
+      else join (Minf l) (Inf h) |> validate
+  | Minf h, Range (l1, h1) | Range (l1, h1), Minf h ->
+      if h < l1 then join i1 i2 |> validate
+      else if h < h1 then join (Minf l1) (Range (h, h1)) |> validate
+      else join (Minf l1) (Range (h1, h)) |> validate
+  | Range (l1, h1), Inf l | Inf l, Range (l1, h1) ->
+      if h1 < l then join i1 i2 |> validate
+      else if l1 < l then join (Range (l1, l)) (Inf h1) |> validate
+      else join (Range (l, l1)) (Inf h1) |> validate
+  | Range _, Range _ -> Top (*TODO*)
+
 let filter_gt i1 i2 = match (i1, i2) with _ -> i1
 let filter_ge i1 i2 = match (i1, i2) with _ -> i1
 let filter_lt i1 i2 = match (i1, i2) with _ -> i1
