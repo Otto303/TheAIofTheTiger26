@@ -183,25 +183,23 @@ let filter_eq i1 i2 =
       let l = max l1 l2 in
       let h = min h1 h2 in
       Range (l, h) |> validate
-  | _ -> i1
+  | Range (l1, h1), Inf l2 | Inf l2, Range (l1, h1) ->
+      let l = max l1 l2 in
+      Range (l, h1) |> validate
+  | Range (l1, h1), Minf h2 | Minf h2, Range (l1, h1) ->
+      let h = min h1 h2 in
+      Range (l1, h) |> validate
+  | Inf l1, Inf l2 ->
+      let l = max l1 l2 in
+      Inf l |> validate
+  | Minf h1, Minf h2 ->
+      let h = min h1 h2 in
+      Minf h |> validate
+  | Top, itv | itv, Top -> itv
+  | Minf h, Inf l | Inf l, Minf h -> validate (Range (l, h))
 
-let filter_ne i1 i2 =
-  match (i1, i2) with
-  | Range _, Range _ -> Top
-  | _ -> i1
-
-let filter_gt i1 i2 =
-  match (i1, i2) with
-  | _ -> i1
-
-let filter_ge i1 i2 =
-  match (i1, i2) with
-  | _ -> i1
-
-let filter_lt i1 i2 =
-  match (i1, i2) with
-  | _ -> i1
-
-let filter_le i1 i2 =
-  match (i1, i2) with
-  | _ -> i1
+let filter_ne i1 i2 = match (i1, i2) with Range _, Range _ -> Top | _ -> i1
+let filter_gt i1 i2 = match (i1, i2) with _ -> i1
+let filter_ge i1 i2 = match (i1, i2) with _ -> i1
+let filter_lt i1 i2 = match (i1, i2) with _ -> i1
+let filter_le i1 i2 = match (i1, i2) with _ -> i1
