@@ -195,8 +195,8 @@ let filter_eq i1 i2 =
   | Minf h1, Minf h2 ->
       let h = min h1 h2 in
       Minf h |> validate
-  | Top, itv | itv, Top -> itv
-  | Minf h, Inf l | Inf l, Minf h -> validate (Range (l, h))
+  | Top, itv | itv, Top -> itv |> validate
+  | Minf h, Inf l | Inf l, Minf h -> Range (l, h) |> validate
 
 let filter_ne i1 i2 = match (i1, i2) with Range _, Range _ -> Top | _ -> i1
 let filter_gt i1 i2 = match (i1, i2) with _ -> i1
