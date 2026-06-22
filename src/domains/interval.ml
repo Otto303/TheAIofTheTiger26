@@ -76,14 +76,14 @@ let mul i1 i2 =
 let div i1 i2 =
   mul i1
     (match i2 with
-    | Range (0, 0) -> Top
+    | Range (0, 0) -> Range (0, 0)
     | Range (y1, 0) -> Minf (1 / y1)
     | Range (0, y2) -> Inf (1 / y2)
     | Range (y1, y2) ->
         if y1 < 0 && 0 < y2 then join (Minf (1 / y1)) (Inf (1 / y2))
         else Range (1 / y2, 1 / y1)
-    | Minf h -> Inf (1 / h)
-    | Inf l -> Minf (1 / l)
+    | Minf h -> if h > 0 then join (Minf (-1)) (Range (1, h)) else Inf (1 / h)
+    | Inf l -> if l < 0 then join (Range (l, -1)) (Inf 1) else Minf (1 / l)
     | _ -> Top)
 
 (* truth handling *)
@@ -109,15 +109,22 @@ let logical_or a b =
 (* comparisons *)
 (* Step 4 *)
 let eq i1 i2 =
-  bool_to_Bool
-    (match (i1, i2) with
-    | Range (x1, x2), Range (y1, y2) -> x1 == y1 && x2 == y2
-    | Inf x1, Inf y1 -> x1 == y1
-    | Minf x2, Minf y2 -> x2 == y2
-    | Top, Top -> true
-    | _, _ -> false)
+  match (i1, i2) with
+  | Range (x1, x2), Range (y1, y2) ->
+      if x1 == y1 && x2 == y2 then true_
+      else if x2 < y1 || y2 < x1 then false_
+      else maybe_
+  | Inf x, Inf y | Minf x, Minf y -> if x == y then true_ else maybe_
+  | Range (_, x), Inf y | Inf y, Range (_, x) ->
+      if x < y then false_ else maybe_
+  | Range (x, _), Minf y | Minf y, Range (x, _) ->
+      if y < x then false_ else maybe_
+  | Top, Top -> true_
+  | _, _ -> false_
 
-let ne i1 i2 = if eq i1 i2 == true_ then false_ else true_
+let ne i1 i2 =
+  let res = eq i1 i2 in
+  if res == true_ then false_ else if res == false_ then true_ else maybe_
 
 let gt i1 i2 =
   match (i1, i2) with
