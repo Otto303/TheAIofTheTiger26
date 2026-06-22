@@ -69,9 +69,22 @@ let mul i1 i2 =
       Range
         ( List.fold_left min (x1 * y1) [ x1 * y2; x2 * y1; x2 * y2 ],
           List.fold_left max (x1 * y1) [ x1 * y2; x2 * y1; x2 * y2 ] )
+  | Inf l1, Inf l2 -> Inf (l1 * l2)
+  | Minf h1, Minf h2 -> Minf (h1 * h2)
   | _, _ -> Top
 
-let div _i1 _i2 = Top
+let div i1 i2 =
+  mul i1
+    (match i2 with
+    | Range (0, 0) -> Top
+    | Range (y1, 0) -> Minf (1 / y1)
+    | Range (0, y2) -> Inf (1 / y2)
+    | Range (y1, y2) ->
+        if y1 < 0 && 0 < y2 then join (Minf (1 / y1)) (Inf (1 / y2))
+        else Range (1 / y2, 1 / y1)
+    | Minf h -> Inf (1 / h)
+    | Inf l -> Minf (1 / l)
+    | _ -> Top)
 
 (* truth handling *)
 let false_ = Range (0, 0)
