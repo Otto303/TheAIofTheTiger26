@@ -217,7 +217,11 @@ let filter_ne i1 i2 =
       if h1 < l then join i1 i2 |> validate
       else if l1 < l then join (Range (l1, l)) (Inf h1) |> validate
       else join (Range (l, l1)) (Inf h1) |> validate
-  | Range _, Range _ -> Top (*TODO*)
+  | Range (l1, h1), Range (l2, h2) -> (
+      match List.sort compare [ l1; h1; l2; h2 ] with
+      | [ l1; h1; l2; h2 ] -> join (Range (l1, h1)) (Range (l2, h2)) |> validate
+      (* Avoid warning *)
+      | _ -> raise Domain.Bot_found)
 
 let filter_gt i1 i2 = match (i1, i2) with _ -> i1
 let filter_ge i1 i2 = match (i1, i2) with _ -> i1
