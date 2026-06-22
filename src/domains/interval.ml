@@ -243,7 +243,41 @@ let filter_ne i1 i2 =
       (* Avoid warning *)
       | _ -> raise Domain.Bot_found)
 
-let filter_gt i1 i2 = match (i1, i2) with _ -> i1
-let filter_ge i1 i2 = match (i1, i2) with _ -> i1
-let filter_lt i1 i2 = match (i1, i2) with _ -> i1
-let filter_le i1 i2 = match (i1, i2) with _ -> i1
+let filter_gt i1 i2 =
+  match (i1, i2) with
+  | Range (l1, h1), Range (_, h2) ->
+      if h1 > h2 then Range (max l1 (h2 + 1), h1) |> validate
+      else raise Domain.Bot_found
+  | Range (l1, h1), Minf h2 -> Range (max l1 (h2 + 1), h1) |> validate
+  | Inf l1, Range (_, h2) | Inf l1, Minf h2 -> Inf (max l1 (h2 + 1)) |> validate
+  | Top, Range (_, h) -> Inf (h + 1)
+  | _ -> raise Domain.Bot_found
+
+let filter_ge i1 i2 =
+  match (i1, i2) with
+  | Range (l1, h1), Range (_, h2) ->
+      if h1 >= h2 then Range (max l1 h2, h1) |> validate
+      else raise Domain.Bot_found
+  | Range (l1, h1), Minf h2 -> Range (max l1 h2, h1) |> validate
+  | Inf l1, Range (_, h2) | Inf l1, Minf h2 -> Inf (max l1 h2) |> validate
+  | Top, Range (_, h) -> Inf h
+  | _ -> raise Domain.Bot_found
+
+let filter_lt i1 i2 =
+  match (i1, i2) with
+  | Range (l1, h1), Range (l2, h2) ->
+      if l1 < l2 then Range (l1, min h1 (h2 - 1)) |> validate
+      else raise Domain.Bot_found
+  | Range (l1, h1), Inf l2 -> Range (l1, min h1 (l2 - 1)) |> validate
+  | Minf h1, Range (l2, _) | Minf h1, Inf l2 ->
+      Minf (min h1 (l2 - 1)) |> validate
+  | _ -> raise Domain.Bot_found
+
+let filter_le i1 i2 =
+  match (i1, i2) with
+  | Range (l1, h1), Range (l2, h2) ->
+      if l1 <= l2 then Range (l1, min h1 h2) |> validate
+      else raise Domain.Bot_found
+  | Range (l1, h1), Inf l2 -> Range (l1, min h1 l2) |> validate
+  | Minf h1, Range (l2, _) | Minf h1, Inf l2 -> Minf (min h1 l2) |> validate
+  | _ -> raise Domain.Bot_found
