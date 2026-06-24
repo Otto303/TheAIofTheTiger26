@@ -26,7 +26,15 @@ let join i1 i2 =
   | Range (n, _), Inf low | Inf low, Range (_, n) -> Inf (min n low)
   | _ -> Top
 
-let widen _ _ = Top
+let widen i1 i2 =
+  match (i1, i2) with
+  | Range (l1, h1), Range (l2, h2) ->
+    if h1 < h2 then
+      if l1 > l2 then Top
+      else Inf l1
+    else if l1 > l2 then Minf h1
+    else Inf l1
+  | _, _ -> Top
 
 let subset a b =
   match (a, b) with

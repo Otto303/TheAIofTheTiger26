@@ -361,7 +361,14 @@ module Make (D : D) = struct
   and fixpoint_while (state : State.t) (loc : location) (cond : expr)
       (body : expr) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
-    Format.asprintf "%s" __FUNCTION__ |> Utils.niy
+    let rec subfunc state =
+      let annot = analyze_expr state cond in
+      match Value.cast_bool loc annot.e_value with
+      | False | Unknown -> annot
+      | True -> let annnot_body = analyze_expr annot.e_state body in
+        subfunc (State.widen annot.e_state annnot_body.e_state)
+    in
+    subfunc state
 
   (* [analyze_while state loc cond body] analyzes a while-loop in two phases:
    - First tries to analyze using bounded unrolling (via [unroll_while]).
