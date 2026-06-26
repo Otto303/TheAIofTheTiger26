@@ -79,17 +79,17 @@ let mul i1 i2 =
   | Minf h1, Minf h2 -> Minf (h1 * h2)
   | _, _ -> Top
 
-let rec div i1 i2 =
+let div i1 i2 =
   match (i1, i2) with
   | Range _, Range (0, 0) -> Top
   | Range (x1, x2), Range (y1, 0) -> Minf (max (x1 / y1) (x2 / y1))
   | Range (x1, x2), Range (0, y2) -> Inf (min (x1 / y2) (x2 / y2))
   | Range (x1, x2), Range (y1, y2) ->
-    if y1 > 0 || y2 < 0 then
-      Range
-        ( List.fold_left min (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ],
-          List.fold_left max (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ] )
-    else Top
+      if y1 > 0 || y2 < 0 then
+        Range
+          ( List.fold_left min (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ],
+            List.fold_left max (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ] )
+      else Top
   | _ -> Top
 
 (* truth handling *)

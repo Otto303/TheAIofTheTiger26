@@ -10,15 +10,15 @@ module Make (Product : Domain.IntReduction) = struct
   (* set-theoretic operations *)
   let join (a1, b1) (a2, b2) : t =
     (* complete the function *)
-    (I1.join a1 a2), (I2.join b1 b2)
+    (I1.join a1 a2, I2.join b1 b2)
 
   let widen (a1, b1) (a2, b2) : t =
     (* complete the function *)
-    (I1.widen a1 a2), (I2.widen b1 b2)
+    (I1.widen a1 a2, I2.widen b1 b2)
 
   let subset (a1, b1) (a2, b2) : bool =
     (* complete the function *)
-    (I1.subset a1 a2) || (I2.subset b1 b2)
+    I1.subset a1 a2 || I2.subset b1 b2
 
   (* conversion to truth value *)
   let truth ((a, b) : t) : Domain.truth =
