@@ -23,16 +23,19 @@ module Make (Product : Domain.IntReduction) = struct
   (* conversion to truth value *)
   let truth ((a, b) : t) : Domain.truth =
     (* complete the function *)
-    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    match (I1.truth a, I2.truth b) with
+    | Domain.True, Domain.True -> Domain.True
+    | Domain.False, Domain.False -> Domain.False
+    | _ -> Domain.Unknown
 
   (* booolean operation *)
   let logical_and (a1, b1) (a2, b2) : t =
     (* complete the function *)
-    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (I1.logical_and a1 a2, I2.logical_and b1 b2)
 
   let logical_or (a1, b1) (a2, b2) : t =
     (* complete the function *)
-    Format.asprintf "(%s) not implemented" __FUNCTION__ |> Utils.niy
+    (I1.logical_or a1 a2, I2.logical_or b1 b2)
 
   (* arith *)
   let add (a1, b1) (a2, b2) : t = (I1.add a1 a2, I2.add b1 b2)
