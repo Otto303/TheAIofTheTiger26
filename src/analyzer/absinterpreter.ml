@@ -372,8 +372,7 @@ module Make (D : D) = struct
       in
       match Value.cast_bool loc cond_annot.e_value with
       | False | Unknown ->
-          Annotast.build_expr loc cond_annot.e_payload
-            (filter cond_annot.e_state cond_annot false)
+          Annotast.build_expr loc cond_annot.e_payload cond_annot.e_state
             cond_annot.e_value
       | True -> subfunc (State.widen cond_annot.e_state body_annot.e_state)
     in
