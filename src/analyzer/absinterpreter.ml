@@ -284,27 +284,29 @@ module Make (D : D) = struct
   and analyze_if (state : State.t) (loc : location) (cond : expr) (tbr : expr)
       (fbr : expr option) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
-    let annot = analyze_expr state cond in
-    let t_annot = analyze_expr annot.e_state tbr in
-    let f_annot = Option.map (analyze_expr annot.e_state) fbr in
-    match (Value.cast_bool loc annot.e_value, f_annot) with
+    let cond_annot = analyze_expr state cond in
+    let then_annot = analyze_expr (filter state cond_annot true) tbr in
+    let else_annot =
+      Option.map (analyze_expr (filter state cond_annot false)) fbr
+    in
+    match (Value.cast_bool loc cond_annot.e_value, else_annot) with
     | True, _ | Unknown, None ->
         Annotast.build_expr loc
-          (Annotast.AIfThenElse (annot, t_annot, f_annot))
-          t_annot.e_state t_annot.e_value
+          (Annotast.AIfThenElse (cond_annot, then_annot, else_annot))
+          then_annot.e_state then_annot.e_value
     | False, Some some_f ->
         Annotast.build_expr loc
-          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          (Annotast.AIfThenElse (cond_annot, then_annot, else_annot))
           some_f.e_state some_f.e_value
     | False, None ->
         Annotast.build_expr loc
-          (Annotast.AIfThenElse (annot, t_annot, f_annot))
-          annot.e_state Value.Void
+          (Annotast.AIfThenElse (cond_annot, then_annot, else_annot))
+          cond_annot.e_state Value.Void
     | Unknown, Some some_f ->
-        let j_val = Value.join t_annot.e_value some_f.e_value in
-        let j_state = State.join t_annot.e_state some_f.e_state in
+        let j_val = Value.join then_annot.e_value some_f.e_value in
+        let j_state = State.join then_annot.e_state some_f.e_state in
         Annotast.build_expr loc
-          (Annotast.AIfThenElse (annot, t_annot, f_annot))
+          (Annotast.AIfThenElse (cond_annot, then_annot, else_annot))
           j_state j_val
 
   (* [accumulate cond body initial] simulates one additional iteration of a while-loop:
@@ -365,8 +367,9 @@ module Make (D : D) = struct
       let annot = analyze_expr state cond in
       match Value.cast_bool loc annot.e_value with
       | False | Unknown -> annot
-      | True -> let annnot_body = analyze_expr annot.e_state body in
-        subfunc (State.widen annot.e_state annnot_body.e_state)
+      | True ->
+          let annnot_body = analyze_expr annot.e_state body in
+          subfunc (State.widen annot.e_state annnot_body.e_state)
     in
     subfunc state
 
