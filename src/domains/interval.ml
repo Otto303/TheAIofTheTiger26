@@ -29,11 +29,9 @@ let join i1 i2 =
 let widen i1 i2 =
   match (i1, i2) with
   | Range (l1, h1), Range (l2, h2) ->
-    if h1 < h2 then
-      if l1 > l2 then Top
+      if h1 < h2 then if l1 > l2 then Top else Inf l1
+      else if l1 > l2 then Minf h1
       else Inf l1
-    else if l1 > l2 then Minf h1
-    else Inf l1
   | _, _ -> Top
 
 let subset a b =
@@ -81,18 +79,18 @@ let mul i1 i2 =
   | Minf h1, Minf h2 -> Minf (h1 * h2)
   | _, _ -> Top
 
-let div i1 i2 =
-  mul i1
-    (match i2 with
-    | Range (0, 0) -> Range (0, 0)
-    | Range (y1, 0) -> Minf (1 / y1)
-    | Range (0, y2) -> Inf (1 / y2)
-    | Range (y1, y2) ->
-        if y1 < 0 && 0 < y2 then join (Minf (1 / y1)) (Inf (1 / y2))
-        else Range (1 / y2, 1 / y1)
-    | Minf h -> if h > 0 then join (Minf (-1)) (Range (1, h)) else Inf (1 / h)
-    | Inf l -> if l < 0 then join (Range (l, -1)) (Inf 1) else Minf (1 / l)
-    | _ -> Top)
+let rec div i1 i2 =
+  match (i1, i2) with
+  | Range _, Range (0, 0) -> Top
+  | Range (x1, x2), Range (y1, 0) -> Minf (max (x1 / y1) (x2 / y1))
+  | Range (x1, x2), Range (0, y2) -> Inf (min (x1 / y2) (x2 / y2))
+  | Range (x1, x2), Range (y1, y2) ->
+    if y1 > 0 || y2 < 0 then
+      Range
+        ( List.fold_left min (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ],
+          List.fold_left max (x1 / y1) [ x1 / y2; x2 / y1; x2 / y2 ] )
+    else Top
+  | _ -> Top
 
 (* truth handling *)
 let false_ = Range (0, 0)
