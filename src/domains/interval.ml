@@ -128,7 +128,8 @@ let eq i1 i2 =
   | Range (x, _), Minf y | Minf y, Range (x, _) ->
       if y < x then false_ else maybe_
   | Top, Top -> true_
-  | _, _ -> false_
+  | Inf x, Minf y | Minf y, Inf x -> if x < y then maybe_ else false_
+  | Top, _ | _, Top -> maybe_
 
 let ne i1 i2 =
   let res = eq i1 i2 in
