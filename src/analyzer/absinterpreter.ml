@@ -371,8 +371,12 @@ module Make (D : D) = struct
         analyze_expr (filter cond_annot.e_state cond_annot true) body
       in
       match Value.cast_bool loc cond_annot.e_value with
-      | False | Unknown ->
+      | Unknown ->
           Annotast.build_expr loc cond_annot.e_payload cond_annot.e_state
+            cond_annot.e_value
+      | False ->
+          Annotast.build_expr loc cond_annot.e_payload
+            (filter cond_annot.e_state cond_annot false)
             cond_annot.e_value
       | True -> subfunc (State.widen cond_annot.e_state body_annot.e_state)
     in
