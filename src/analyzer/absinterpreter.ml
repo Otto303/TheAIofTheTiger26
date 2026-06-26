@@ -366,12 +366,16 @@ module Make (D : D) = struct
       (body : expr) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
     let rec subfunc state =
-      let annot = analyze_expr state cond in
-      match Value.cast_bool loc annot.e_value with
-      | False | Unknown -> annot
-      | True ->
-          let annnot_body = analyze_expr annot.e_state body in
-          subfunc (State.widen annot.e_state annnot_body.e_state)
+      let cond_annot = analyze_expr state cond in
+      let body_annot =
+        analyze_expr (filter cond_annot.e_state cond_annot true) body
+      in
+      match Value.cast_bool loc cond_annot.e_value with
+      | False | Unknown ->
+          Annotast.build_expr loc cond_annot.e_payload
+            (filter cond_annot.e_state cond_annot false)
+            cond_annot.e_value
+      | True -> subfunc (State.widen cond_annot.e_state body_annot.e_state)
     in
     subfunc state
 
