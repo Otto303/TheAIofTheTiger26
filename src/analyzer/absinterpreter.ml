@@ -285,9 +285,11 @@ module Make (D : D) = struct
       (fbr : expr option) : (State.t, Value.t) Annotast.expr =
     (* replace with your own code *)
     let cond_annot = analyze_expr state cond in
-    let then_annot = analyze_expr (filter state cond_annot true) tbr in
+    let then_annot =
+      analyze_expr (filter cond_annot.e_state cond_annot true) tbr
+    in
     let else_annot =
-      Option.map (analyze_expr (filter state cond_annot false)) fbr
+      Option.map (analyze_expr (filter cond_annot.e_state cond_annot false)) fbr
     in
     match (Value.cast_bool loc cond_annot.e_value, else_annot) with
     | True, _ | Unknown, None ->
