@@ -378,7 +378,10 @@ module Make (D : D) = struct
           Annotast.build_expr loc cond_annot.e_payload
             (filter cond_annot.e_state cond_annot false)
             cond_annot.e_value
-      | True -> subfunc (State.widen cond_annot.e_state body_annot.e_state)
+      | True -> let annot = subfunc (State.widen cond_annot.e_state body_annot.e_state) in
+          Annotast.build_expr loc annot.e_payload
+            (filter annot.e_state annot false)
+            annot.e_value
     in
     subfunc state
 
