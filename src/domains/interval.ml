@@ -29,9 +29,11 @@ let join i1 i2 =
 let widen i1 i2 =
   match (i1, i2) with
   | Range (l1, h1), Range (l2, h2) ->
-      if h1 < h2 then if l1 > l2 then Top else Inf l1
+      if l1 == l2 && h1 == h2 then i1
+      else if h1 < h2 then if l1 > l2 then Top else Inf l1
       else if l1 > l2 then Minf h1
       else Inf l1
+  | Inf n1, Inf n2 | Minf n1, Minf n2 -> if n1 == n2 then i1 else Top
   | _, _ -> Top
 
 let subset a b =
